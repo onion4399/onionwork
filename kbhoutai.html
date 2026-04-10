@@ -1,0 +1,1481 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>360 AI 企业知识库管理后台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "PingFang SC", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #e8f4fc 0%, #f0f7ff 50%, #e6f0f9 100%);
+            min-height: 100vh;
+        }
+
+        /* 磨砂玻璃卡片效果 */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04), 0 0 1px rgba(0, 0, 0, 0.02);
+        }
+
+        /* 侧边栏 */
+        .sidebar {
+            width: 64px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-right: 1px solid rgba(230, 240, 250, 0.8);
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 16px 0;
+        }
+
+        .nav-item {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            color: #8c9aa8;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .nav-item:hover {
+            background: rgba(24, 144, 255, 0.08);
+            color: #1890ff;
+        }
+
+        .nav-item.active {
+            background: rgba(24, 144, 255, 0.12);
+            color: #1890ff;
+        }
+
+        .nav-item i {
+            width: 22px;
+            height: 22px;
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #1890ff 0%, #36cfc9 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 12px rgba(24, 144, 255, 0.25);
+        }
+
+        .logo-icon svg {
+            width: 20px;
+            height: 20px;
+            color: white;
+        }
+
+        /* 主内容区 */
+        .main-content {
+            margin-left: 64px;
+            padding: 24px 32px;
+            min-height: 100vh;
+        }
+
+        /* 头部欢迎区 */
+        .header-section {
+            margin-bottom: 24px;
+        }
+
+        .welcome-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .welcome-subtitle {
+            font-size: 14px;
+            color: #8c9aa8;
+        }
+
+        .admin-badge {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #1890ff 0%, #36cfc9 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 生命周期管理区 */
+        .lifecycle-section {
+            margin-bottom: 24px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 16px;
+        }
+
+        .lifecycle-flow {
+            display: flex;
+            gap: 16px;
+            overflow-x: auto;
+        }
+
+        .lifecycle-card {
+            flex: 1;
+            min-width: 240px;
+            padding: 20px;
+            position: relative;
+        }
+
+        .lifecycle-number {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .lifecycle-number.blue { color: #1890ff; }
+        .lifecycle-number.cyan { color: #36cfc9; }
+        .lifecycle-number.purple { color: #722ed1; }
+        .lifecycle-number.gray { color: #8c9aa8; }
+
+        .lifecycle-stats {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 8px;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #8c9aa8;
+        }
+
+        .stat-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .stat-value.success { color: #52c41a; }
+        .stat-value.warning { color: #fa8c16; }
+        .stat-value.danger { color: #ff4d4f; }
+
+        .lifecycle-arrow {
+            position: absolute;
+            right: -12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #d9d9d9;
+            z-index: 10;
+        }
+
+        /* 数据看板 */
+        .dashboard-section {
+            margin-bottom: 24px;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+        }
+
+        .dashboard-card {
+            padding: 20px;
+            position: relative;
+        }
+
+        .dashboard-card.wide {
+            grid-column: span 2;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .card-header-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card-header-icon.blue { background: rgba(24, 144, 255, 0.1); color: #1890ff; }
+        .card-header-icon.cyan { background: rgba(54, 207, 201, 0.1); color: #36cfc9; }
+        .card-header-icon.purple { background: rgba(114, 46, 209, 0.1); color: #722ed1; }
+
+        /* 数据源样式 */
+        .source-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .source-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .source-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .source-icon.local { background: #e6f7ff; color: #1890ff; }
+        .source-icon.cloud { background: #f6ffed; color: #52c41a; }
+        .source-icon.bilibili { background: #fff2f0; color: #ff4d4f; }
+        .source-icon.arxiv { background: #f9f0ff; color: #722ed1; }
+        .source-icon.web { background: #fff7e6; color: #fa8c16; }
+        .source-icon.wechat { background: #e6fffb; color: #13c2c2; }
+        .source-icon.other { background: #f5f5f5; color: #8c8c8c; }
+
+        .source-info {
+            flex: 1;
+        }
+
+        .source-name {
+            font-size: 13px;
+            color: #595959;
+        }
+
+        .source-count {
+            font-size: 12px;
+            color: #8c9aa8;
+        }
+
+        /* 知识处理与存储 */
+        .knowledge-center {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .knowledge-icon {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 12px;
+        }
+
+        .knowledge-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1890ff;
+            margin-bottom: 16px;
+        }
+
+        .knowledge-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px 24px;
+            width: 100%;
+        }
+
+        .knowledge-stat {
+            text-align: left;
+        }
+
+        .knowledge-stat-label {
+            font-size: 12px;
+            color: #8c9aa8;
+            margin-bottom: 4px;
+        }
+
+        .knowledge-stat-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        /* 右侧数据统计 */
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+        }
+
+        .data-row:last-child {
+            border-bottom: none;
+        }
+
+        .data-label {
+            font-size: 13px;
+            color: #595959;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .data-value {
+            font-size: 15px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .data-value.success { color: #52c41a; }
+        .data-value.danger { color: #ff4d4f; }
+        .data-value.warning { color: #fa8c16; }
+
+        .data-sub {
+            font-size: 11px;
+            color: #8c9aa8;
+            margin-top: 2px;
+        }
+
+        /* 趋势图区域 */
+        .charts-section {
+            margin-bottom: 24px;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .chart-card {
+            padding: 20px;
+        }
+
+        .chart-header {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 16px;
+        }
+
+        .chart-legend {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: #8c9aa8;
+        }
+
+        .legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 2px;
+        }
+
+        .chart-container {
+            height: 180px;
+            position: relative;
+        }
+
+        /* 新增模块样式 */
+        .monitor-section {
+            margin-bottom: 24px;
+        }
+
+        .monitor-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .monitor-card {
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .monitor-content {
+            padding: 24px 32px;
+            display: flex;
+            gap: 40px;
+            align-items: center;
+        }
+
+        .ring-chart-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-width: 140px;
+        }
+
+        .ring-chart {
+            width: 140px;
+            height: 140px;
+            position: relative;
+        }
+
+        .ring-chart svg {
+            transform: rotate(-90deg);
+        }
+
+        .ring-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .ring-percentage {
+            font-size: 32px;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .ring-percentage.danger { color: #ff4d4f; }
+        .ring-percentage.primary { color: #1890ff; }
+
+        .ring-label {
+            font-size: 13px;
+            color: #8c9aa8;
+            margin-top: 6px;
+        }
+
+        .monitor-data {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .monitor-data-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .monitor-data-label {
+            font-size: 14px;
+            color: #595959;
+        }
+
+        .monitor-data-value {
+            font-size: 15px;
+            font-weight: 500;
+            color: #1a1a1a;
+        }
+
+        .monitor-data-value.danger { color: #ff4d4f; font-weight: 500; }
+        .monitor-data-value.primary { color: #1890ff; font-weight: 500; }
+        .monitor-data-value.gray { color: #8c9aa8; font-weight: 500; }
+
+        .warning-icon {
+            color: #ff4d4f;
+            margin-right: 4px;
+            display: inline-flex;
+            vertical-align: middle;
+        }
+
+        .monitor-footer {
+            padding: 12px 32px 20px;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+        }
+
+        .footer-message {
+            font-size: 13px;
+            color: #595959;
+        }
+
+        .footer-message.warning {
+            color: #ff4d4f;
+        }
+
+        .footer-time {
+            font-size: 13px;
+            color: #8c9aa8;
+        }
+
+        .action-btn {
+            padding: 6px 16px;
+            background: #1890ff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .action-btn:hover {
+            background: #40a9ff;
+        }
+
+        .link-btn {
+            color: #1890ff;
+            font-size: 13px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+        }
+
+        .link-btn:hover {
+            color: #40a9ff;
+        }
+
+        /* 环形进度条动画 */
+        .ring-progress {
+            fill: none;
+            stroke-width: 10;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 1.5s ease-out;
+        }
+
+        .ring-bg {
+            fill: none;
+            stroke: #f0f0f0;
+            stroke-width: 10;
+        }
+
+        /* 趋势图SVG样式 */
+        .trend-line {
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .trend-area {
+            opacity: 0.1;
+        }
+
+        .trend-dot {
+            fill: white;
+            stroke-width: 2;
+            r: 4;
+        }
+
+        .axis-line {
+            stroke: #e8e8e8;
+            stroke-width: 1;
+        }
+
+        .axis-text {
+            font-size: 11px;
+            fill: #8c9aa8;
+        }
+
+        /* 存储资源动态管理3D效果 */
+        .storage-3d {
+            position: relative;
+            width: 100%;
+            height: 140px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .storage-3d-icon {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #e6f7ff 0%, #bae7ff 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 24px rgba(24, 144, 255, 0.15);
+            position: relative;
+        }
+
+        .storage-3d-icon::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: 10px;
+            right: 10px;
+            height: 20px;
+            background: linear-gradient(135deg, #bae7ff 0%, #91d5ff 100%);
+            border-radius: 8px;
+            transform: perspective(100px) rotateX(60deg);
+        }
+
+        .storage-3d-icon i {
+            width: 48px;
+            height: 48px;
+            color: #1890ff;
+        }
+
+        /* 响应式 */
+        @media (max-width: 1400px) {
+            .dashboard-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .dashboard-card.wide {
+                grid-column: span 1;
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .monitor-grid,
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+            .lifecycle-flow {
+                flex-wrap: wrap;
+            }
+            .lifecycle-card {
+                min-width: calc(50% - 8px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 侧边栏 -->
+    <aside class="sidebar">
+        <div class="logo-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+            </svg>
+        </div>
+
+        <nav class="nav-item active" title="首页">
+            <i data-lucide="home"></i>
+        </nav>
+        <nav class="nav-item" title="智能助手">
+            <i data-lucide="bot"></i>
+        </nav>
+        <nav class="nav-item" title="知识库">
+            <i data-lucide="database"></i>
+        </nav>
+        <nav class="nav-item" title="广场">
+            <i data-lucide="globe"></i>
+        </nav>
+        <nav class="nav-item" title="群组">
+            <i data-lucide="users"></i>
+        </nav>
+        <nav class="nav-item" title="AI工具">
+            <i data-lucide="sparkles"></i>
+        </nav>
+        <nav class="nav-item" title="日程">
+            <i data-lucide="calendar"></i>
+        </nav>
+        <nav class="nav-item" title="审批">
+            <i data-lucide="check-square"></i>
+        </nav>
+        <nav class="nav-item" title="应用">
+            <i data-lucide="grid-3x3"></i>
+        </nav>
+        <nav class="nav-item" title="消息">
+            <i data-lucide="message-square"></i>
+        </nav>
+
+        <div class="mt-auto">
+            <div class="nav-item" title="设置">
+                <i data-lucide="settings"></i>
+            </div>
+            <div style="width: 36px; height: 36px; background: linear-gradient(135deg, #1890ff 0%, #36cfc9 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; font-weight: 600; margin-top: 8px; cursor: pointer;">
+                管
+            </div>
+        </div>
+    </aside>
+
+    <!-- 主内容区 -->
+    <main class="main-content">
+        <!-- 头部欢迎区 -->
+        <section class="header-section">
+            <h1 class="welcome-title">
+                <div class="admin-badge">
+                    <i data-lucide="user" style="width: 18px; height: 18px; color: white;"></i>
+                </div>
+                管理员，你好！
+            </h1>
+            <p class="welcome-subtitle">欢迎回到 360 AI 企业知识库控制台，畅享高效的 AI 企业知识库全生命周期运营管理</p>
+        </section>
+
+        <!-- 知识全生命周期管理 -->
+        <section class="lifecycle-section">
+            <h2 class="section-title">知识全生命周期管理</h2>
+            <div class="lifecycle-flow">
+                <!-- 1. 知识创建 -->
+                <div class="glass-card lifecycle-card">
+                    <div class="lifecycle-number blue">1. 知识创建</div>
+                    <div class="lifecycle-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">总知识库</span>
+                            <span class="stat-value">52 个</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">文档库</span>
+                            <span class="stat-value">52 个</span>
+                        </div>
+                    </div>
+                    <i data-lucide="chevron-right" class="lifecycle-arrow" style="width: 20px; height: 20px;"></i>
+                </div>
+
+                <!-- 2. 审核发布 -->
+                <div class="glass-card lifecycle-card">
+                    <div class="lifecycle-number cyan">2. 审核发布</div>
+                    <div class="lifecycle-stats">
+                        <div class="stat-item">
+                            <span class="stat-label" style="display: flex; align-items: center; gap: 4px;">
+                                <span style="width: 6px; height: 6px; background: #52c41a; border-radius: 50%;"></span>
+                                已发布知识库
+                            </span>
+                            <span class="stat-value success">10 个</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label" style="display: flex; align-items: center; gap: 4px;">
+                                <span style="width: 6px; height: 6px; background: #fa8c16; border-radius: 50%;"></span>
+                                审核中
+                            </span>
+                            <span class="stat-value warning">0 个</span>
+                        </div>
+                    </div>
+                    <div style="margin-top: 8px;">
+                        <span class="stat-label" style="display: flex; align-items: center; gap: 4px;">
+                            <span style="width: 6px; height: 6px; background: #ff4d4f; border-radius: 50%;"></span>
+                            已驳回
+                        </span>
+                        <span class="stat-value danger" style="font-size: 14px;">0 个</span>
+                    </div>
+                    <i data-lucide="chevron-right" class="lifecycle-arrow" style="width: 20px; height: 20px;"></i>
+                </div>
+
+                <!-- 3. 运营使用 -->
+                <div class="glass-card lifecycle-card">
+                    <div class="lifecycle-number purple">3. 运营使用</div>
+                    <div class="lifecycle-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">AI调用量</span>
+                            <span class="stat-value">1988 次</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">协作知识库</span>
+                            <span class="stat-value">15 个</span>
+                        </div>
+                    </div>
+                    <i data-lucide="chevron-right" class="lifecycle-arrow" style="width: 20px; height: 20px;"></i>
+                </div>
+
+                <!-- 4. 知识销毁 -->
+                <div class="glass-card lifecycle-card">
+                    <div class="lifecycle-number gray">4. 知识销毁</div>
+                    <div class="lifecycle-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">已销毁</span>
+                            <span class="stat-value">0 条</span>
+                        </div>
+                    </div>
+                    <div style="margin-top: 8px;">
+                        <span class="stat-value success" style="font-size: 13px;">备份及找回保障中</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 知识运营数据看板 -->
+        <section class="dashboard-section">
+            <h2 class="section-title">知识运营数据看板</h2>
+            <div class="dashboard-grid">
+                <!-- 数据源 -->
+                <div class="glass-card dashboard-card">
+                    <div class="card-header">
+                        <div class="card-header-icon blue">
+                            <i data-lucide="download" style="width: 14px; height: 14px;"></i>
+                        </div>
+                        本地
+                        <span style="font-size: 12px; color: #8c9aa8; font-weight: normal;">2,743个</span>
+                    </div>
+                    <div class="source-list">
+                        <div class="source-item">
+                            <div class="source-icon cloud">云</div>
+                            <div class="source-info">
+                                <div class="source-name">云盘</div>
+                                <div class="source-count">3个</div>
+                            </div>
+                        </div>
+                        <div class="source-item">
+                            <div class="source-icon bilibili">B</div>
+                            <div class="source-info">
+                                <div class="source-name">B站</div>
+                                <div class="source-count">0个</div>
+                            </div>
+                        </div>
+                        <div class="source-item">
+                            <div class="source-icon arxiv">A</div>
+                            <div class="source-info">
+                                <div class="source-name">Arxiv</div>
+                                <div class="source-count">0个</div>
+                            </div>
+                        </div>
+                        <div class="source-item">
+                            <div class="source-icon web">网</div>
+                            <div class="source-info">
+                                <div class="source-name">网页</div>
+                                <div class="source-count">0个</div>
+                            </div>
+                        </div>
+                        <div class="source-item">
+                            <div class="source-icon wechat">微</div>
+                            <div class="source-info">
+                                <div class="source-name">微信公众号</div>
+                                <div class="source-count">0个</div>
+                            </div>
+                        </div>
+                        <div class="source-item">
+                            <div class="source-icon other">
+                                <i data-lucide="more-horizontal" style="width: 14px; height: 14px;"></i>
+                            </div>
+                            <div class="source-info">
+                                <div class="source-name">其他</div>
+                                <div class="source-count">0个</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="position: absolute; right: 16px; top: 16px; text-align: right;">
+                        <div style="font-size: 12px; color: #8c9aa8;">来源</div>
+                        <div style="font-size: 28px; font-weight: 700; color: #1a1a1a;">7 个</div>
+                        <div style="font-size: 12px; color: #8c9aa8; margin-top: 4px;">当前任务</div>
+                        <div style="font-size: 28px; font-weight: 700; color: #1a1a1a;">0 个</div>
+                    </div>
+                </div>
+
+                <!-- 知识处理与存储 -->
+                <div class="glass-card dashboard-card">
+                    <div class="knowledge-center">
+                        <div class="knowledge-icon">
+                            <svg viewBox="0 0 80 80" fill="none">
+                                <rect x="15" y="45" width="50" height="30" rx="4" fill="url(#grad1)"/>
+                                <rect x="25" y="25" width="30" height="25" rx="3" fill="url(#grad2)"/>
+                                <rect x="32" y="10" width="16" height="18" rx="2" fill="url(#grad3)"/>
+                                <defs>
+                                    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#1890ff"/>
+                                        <stop offset="100%" style="stop-color:#36cfc9"/>
+                                    </linearGradient>
+                                    <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#69c0ff"/>
+                                        <stop offset="100%" style="stop-color:#5cdbd3"/>
+                                    </linearGradient>
+                                    <linearGradient id="grad3" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#91d5ff"/>
+                                        <stop offset="100%" style="stop-color:#b7eb8f"/>
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                        </div>
+                        <div class="knowledge-title">知识处理与存储</div>
+                        <div class="knowledge-stats">
+                            <div class="knowledge-stat">
+                                <div class="knowledge-stat-label">文档量</div>
+                                <div class="knowledge-stat-value">0.35 万篇</div>
+                            </div>
+                            <div class="knowledge-stat">
+                                <div class="knowledge-stat-label">存储空间</div>
+                                <div class="knowledge-stat-value">2.00 TB</div>
+                            </div>
+                            <div class="knowledge-stat" style="grid-column: span 2;">
+                                <div class="knowledge-stat-label">解析片段数量</div>
+                                <div class="knowledge-stat-value">8500443 个</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 知识分享与发布 -->
+                <div class="glass-card dashboard-card">
+                    <div class="knowledge-center">
+                        <div class="knowledge-icon">
+                            <svg viewBox="0 0 80 80" fill="none">
+                                <path d="M20 55 Q20 25 40 20 Q60 25 60 55" fill="url(#grad4)"/>
+                                <ellipse cx="40" cy="55" rx="22" ry="8" fill="url(#grad5)"/>
+                                <rect x="35" y="15" width="10" height="15" rx="2" fill="#1890ff"/>
+                                <defs>
+                                    <linearGradient id="grad4" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#1890ff"/>
+                                        <stop offset="100%" style="stop-color:#722ed1"/>
+                                    </linearGradient>
+                                    <linearGradient id="grad5" x1="0%" y1="0%" x2="0%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#b37feb"/>
+                                        <stop offset="100%" style="stop-color:#9254de"/>
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                        </div>
+                        <div class="knowledge-title" style="color: #722ed1;">知识分享与发布</div>
+                        <div class="knowledge-stats">
+                            <div class="knowledge-stat">
+                                <div class="knowledge-stat-label">已发布文档</div>
+                                <div class="knowledge-stat-value">2747 篇</div>
+                            </div>
+                            <div class="knowledge-stat">
+                                <div class="knowledge-stat-label">共享知识占比</div>
+                                <div class="knowledge-stat-value">23%</div>
+                            </div>
+                            <div class="knowledge-stat" style="grid-column: span 2;">
+                                <div class="knowledge-stat-label">知识广场</div>
+                                <div class="knowledge-stat-value">10 个库 640 个文档</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 知识审核与安全防护 -->
+                <div class="glass-card dashboard-card">
+                    <div class="card-header">
+                        <div class="card-header-icon purple">
+                            <i data-lucide="shield-check" style="width: 14px; height: 14px;"></i>
+                        </div>
+                        知识审核与安全防护
+                    </div>
+                    <div class="data-row">
+                        <span class="data-label">AI 解析失败</span>
+                        <span class="data-value">100 篇</span>
+                    </div>
+                    <div class="data-row">
+                        <div>
+                            <span class="data-label">病毒文件识别</span>
+                            <div class="data-sub">+ 内容安全围栏防护中</div>
+                        </div>
+                        <span class="data-value danger">0 篇</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="data-label">敏感词</span>
+                        <span class="data-value danger">1722 个</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="data-label">敏感文件</span>
+                        <span class="data-value">0 个</span>
+                    </div>
+                    <div class="data-row">
+                        <div>
+                            <span class="data-label">外发防护次数</span>
+                            <div class="data-sub" style="color: #52c41a;">+ 安全防护中</div>
+                        </div>
+                        <span class="data-value warning">1 次</span>
+                    </div>
+                </div>
+
+                <!-- 知识运营 -->
+                <div class="glass-card dashboard-card">
+                    <div style="text-align: center; margin-bottom: 16px;">
+                        <span style="font-size: 14px; font-weight: 600; color: #1890ff;">知识运营</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="data-label" style="display: flex; align-items: center; gap: 8px;">
+                            <i data-lucide="mouse-pointer-click" style="width: 14px; height: 14px; color: #8c9aa8;"></i>
+                            调用知识
+                        </span>
+                        <span class="data-value">296 次</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="data-label" style="display: flex; align-items: center; gap: 8px;">
+                            <i data-lucide="star" style="width: 14px; height: 14px; color: #8c9aa8;"></i>
+                            知识标签
+                        </span>
+                        <span class="data-value">4 篇</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="data-label" style="display: flex; align-items: center; gap: 8px;">
+                            <i data-lucide="cpu" style="width: 14px; height: 14px; color: #8c9aa8;"></i>
+                            算力消耗
+                        </span>
+                        <span class="data-value">0 token</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="data-label" style="display: flex; align-items: center; gap: 8px;">
+                            <i data-lucide="refresh-cw" style="width: 14px; height: 14px; color: #8c9aa8;"></i>
+                            知识销毁与找回
+                        </span>
+                        <span class="data-value">2 个</span>
+                    </div>
+                </div>
+
+                <!-- 存储资源动态管理 -->
+                <div class="glass-card dashboard-card">
+                    <div class="storage-3d">
+                        <div class="storage-3d-icon">
+                            <i data-lucide="database"></i>
+                        </div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 14px; font-weight: 600; color: #1890ff; margin-bottom: 8px;">存储资源动态管理</div>
+                        <div style="font-size: 12px; color: #8c9aa8; margin-bottom: 4px;">可用存储/总存储</div>
+                        <div style="font-size: 18px; font-weight: 700; color: #1a1a1a;">1.99 TB / 2.00 TB</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 趋势图区域 -->
+        <section class="charts-section">
+            <div class="charts-grid">
+                <!-- 近7天知识采集趋势 -->
+                <div class="glass-card chart-card">
+                    <div class="chart-header">近 7 天知识采集趋势</div>
+                    <div class="chart-legend">
+                        <div class="legend-item">
+                            <div class="legend-dot" style="background: #1890ff;"></div>
+                            AI生成
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-dot" style="background: #36cfc9;"></div>
+                            本地上传
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-dot" style="background: #52c41a;"></div>
+                            云盘导入
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-dot" style="background: #faad14;"></div>
+                            智能体采集
+                        </div>
+                    </div>
+                    <div class="chart-container" id="chart1"></div>
+                </div>
+
+                <!-- 近7天知识调用趋势 -->
+                <div class="glass-card chart-card">
+                    <div class="chart-header">近 7 天知识调用趋势</div>
+                    <div class="chart-container" id="chart2"></div>
+                </div>
+
+                <!-- 近7天智能体对话趋势 -->
+                <div class="glass-card chart-card">
+                    <div class="chart-header">近 7 天智能体对话趋势</div>
+                    <div class="chart-container" id="chart3"></div>
+                </div>
+
+                <!-- 近7天知识库安全防护趋势 -->
+                <div class="glass-card chart-card">
+                    <div class="chart-header">近 7 天知识库安全防护趋势</div>
+                    <div class="chart-legend">
+                        <div class="legend-item">
+                            <div class="legend-dot" style="background: #52c41a;"></div>
+                            敏感知识识别
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-dot" style="background: #1890ff;"></div>
+                            外发防护
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-dot" style="background: #faad14;"></div>
+                            病毒识别
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-dot" style="background: #ff4d4f;"></div>
+                            其他风险行为防护
+                        </div>
+                    </div>
+                    <div class="chart-container" id="chart4"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 新增监控模块 -->
+        <section class="monitor-section">
+            <div class="monitor-grid">
+                <!-- 存储空间使用情况 -->
+                <div class="glass-card monitor-card">
+                    <div class="monitor-content">
+                        <div class="ring-chart-container">
+                            <div class="ring-chart">
+                                <svg width="140" height="140" viewBox="0 0 140 140">
+                                    <circle class="ring-bg" cx="70" cy="70" r="60"/>
+                                    <circle class="ring-progress danger" cx="70" cy="70" r="60"
+                                            stroke="#ff4d4f"
+                                            stroke-width="10"
+                                            stroke-dasharray="376.99"
+                                            stroke-dashoffset="376.99"
+                                            data-progress="99.5"/>
+                                </svg>
+                                <div class="ring-center">
+                                    <div class="ring-percentage danger" id="storagePercent">0%</div>
+                                    <div class="ring-label">使用率</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="monitor-data">
+                            <div class="monitor-data-row">
+                                <span class="monitor-data-label">总存储</span>
+                                <span class="monitor-data-value">2.00 TB</span>
+                            </div>
+                            <div class="monitor-data-row">
+                                <span class="monitor-data-label">已使用</span>
+                                <span class="monitor-data-value danger">1.99 TB</span>
+                            </div>
+                            <div class="monitor-data-row">
+                                <span class="monitor-data-label">剩余可用</span>
+                                <span class="monitor-data-value danger">
+                                    <svg class="warning-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                                        <line x1="12" y1="9" x2="12" y2="13"/>
+                                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                                    </svg>
+                                    0.01 TB
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="monitor-footer">
+                        <span class="footer-message warning">⚠ 存储空间剩余不足 0.5%，建议尽快扩容</span>
+                    </div>
+                </div>
+
+                <!-- 账号使用情况 -->
+                <div class="glass-card monitor-card">
+                    <div class="monitor-content">
+                        <div class="ring-chart-container">
+                            <div class="ring-chart">
+                                <svg width="140" height="140" viewBox="0 0 140 140">
+                                    <circle class="ring-bg" cx="70" cy="70" r="60"/>
+                                    <circle class="ring-progress primary" cx="70" cy="70" r="60"
+                                            stroke="#1890ff"
+                                            stroke-width="10"
+                                            stroke-dasharray="376.99"
+                                            stroke-dashoffset="376.99"
+                                            data-progress="85"/>
+                                </svg>
+                                <div class="ring-center">
+                                    <div class="ring-percentage primary" id="accountPercent">0%</div>
+                                    <div class="ring-label">激活率</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="monitor-data">
+                            <div class="monitor-data-row">
+                                <span class="monitor-data-label">总账号数</span>
+                                <span class="monitor-data-value">200 个</span>
+                            </div>
+                            <div class="monitor-data-row">
+                                <span class="monitor-data-label">已激活账号</span>
+                                <span class="monitor-data-value primary">170 个</span>
+                            </div>
+                            <div class="monitor-data-row">
+                                <span class="monitor-data-label">未激活账号</span>
+                                <span class="monitor-data-value gray">30 个</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="monitor-footer">
+                        <span class="footer-time">上次更新：<span id="updateTime"></span></span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // 初始化 Lucide 图标
+        lucide.createIcons();
+
+        // 更新时间
+        function updateTime() {
+            const now = new Date();
+            const timeStr = now.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            document.getElementById('updateTime').textContent = timeStr;
+        }
+        updateTime();
+
+        // 环形进度条动画
+        function animateRing(selector, targetPercent, displayId) {
+            const ring = document.querySelector(selector);
+            const circumference = 2 * Math.PI * 60;
+            const offset = circumference - (targetPercent / 100) * circumference;
+
+            // 延迟启动动画，确保页面渲染完成
+            setTimeout(() => {
+                ring.style.strokeDashoffset = offset;
+            }, 300);
+
+            // 数字动画
+            const display = document.getElementById(displayId);
+            let current = 0;
+            const duration = 1500;
+            const step = targetPercent / (duration / 16);
+
+            const timer = setInterval(() => {
+                current += step;
+                if (current >= targetPercent) {
+                    current = targetPercent;
+                    clearInterval(timer);
+                }
+                display.textContent = current.toFixed(1) + '%';
+            }, 16);
+        }
+
+        // 启动动画
+        document.addEventListener('DOMContentLoaded', () => {
+            animateRing('.ring-progress.danger', 99.5, 'storagePercent');
+            animateRing('.ring-progress.primary', 85, 'accountPercent');
+        });
+
+        // 生成趋势图
+        function createLineChart(containerId, data, color, hasArea = false) {
+            const container = document.getElementById(containerId);
+            const width = container.offsetWidth;
+            const height = container.offsetHeight;
+            const padding = { top: 20, right: 20, bottom: 30, left: 40 };
+
+            const maxValue = Math.max(...data) * 1.2;
+            const chartWidth = width - padding.left - padding.right;
+            const chartHeight = height - padding.top - padding.bottom;
+
+            const points = data.map((value, index) => {
+                const x = padding.left + (index / (data.length - 1)) * chartWidth;
+                const y = padding.top + chartHeight - (value / maxValue) * chartHeight;
+                return `${x},${y}`;
+            }).join(' ');
+
+            // 创建区域路径
+            let areaPath = '';
+            if (hasArea) {
+                areaPath = `
+                    <polygon class="trend-area" fill="${color}"
+                        points="${padding.left},${padding.top + chartHeight} ${points} ${padding.left + chartWidth},${padding.top + chartHeight}"/>
+                `;
+            }
+
+            // 创建坐标轴
+            const yAxisLabels = [0, maxValue * 0.25, maxValue * 0.5, maxValue * 0.75, maxValue].map(v =>
+                `<text class="axis-text" x="${padding.left - 8}" y="${padding.top + chartHeight - (v / maxValue) * chartHeight + 4}" text-anchor="end">${Math.round(v)}</text>`
+            ).join('');
+
+            const xAxisLabels = ['04-04', '04-05', '04-06', '04-07', '04-08', '04-09', '04-10'].map((label, i) =>
+                `<text class="axis-text" x="${padding.left + (i / 6) * chartWidth}" y="${height - 8}" text-anchor="middle">${label}</text>`
+            ).join('');
+
+            const gridLines = [0, 0.25, 0.5, 0.75, 1].map(p =>
+                `<line class="axis-line" x1="${padding.left}" y1="${padding.top + chartHeight * (1-p)}" x2="${width - padding.right}" y2="${padding.top + chartHeight * (1-p)}"/>`
+            ).join('');
+
+            container.innerHTML = `
+                <svg width="${width}" height="${height}" style="overflow: visible;">
+                    ${gridLines}
+                    ${areaPath}
+                    <polyline class="trend-line" stroke="${color}" points="${points}"/>
+                    ${data.map((value, index) => {
+                        const x = padding.left + (index / (data.length - 1)) * chartWidth;
+                        const y = padding.top + chartHeight - (value / maxValue) * chartHeight;
+                        return `<circle class="trend-dot" stroke="${color}" cx="${x}" cy="${y}"/>`;
+                    }).join('')}
+                    ${yAxisLabels}
+                    ${xAxisLabels}
+                </svg>
+            `;
+        }
+
+        // 生成柱状图
+        function createBarChart(containerId, datasets) {
+            const container = document.getElementById(containerId);
+            const width = container.offsetWidth;
+            const height = container.offsetHeight;
+            const padding = { top: 20, right: 20, bottom: 30, left: 40 };
+
+            const maxValue = Math.max(...datasets.flatMap(d => d.data)) * 1.2;
+            const chartWidth = width - padding.left - padding.right;
+            const chartHeight = height - padding.top - padding.bottom;
+
+            const groupWidth = chartWidth / 7;
+            const barWidth = groupWidth / datasets.length * 0.6;
+
+            let bars = '';
+            datasets.forEach((dataset, setIndex) => {
+                dataset.data.forEach((value, i) => {
+                    const barHeight = (value / maxValue) * chartHeight;
+                    const x = padding.left + i * groupWidth + (groupWidth - barWidth * datasets.length) / 2 + setIndex * barWidth;
+                    const y = padding.top + chartHeight - barHeight;
+                    bars += `<rect x="${x}" y="${y}" width="${barWidth}" height="${barHeight}" fill="${dataset.color}" rx="2"/>`;
+                });
+            });
+
+            const yAxisLabels = [0, 1, 2, 3, 4].map(v =>
+                `<text class="axis-text" x="${padding.left - 8}" y="${padding.top + chartHeight - (v / 4) * chartHeight + 4}" text-anchor="end">${v}</text>`
+            ).join('');
+
+            const xAxisLabels = ['04-04', '04-05', '04-06', '04-07', '04-08', '04-09', '04-10'].map((label, i) =>
+                `<text class="axis-text" x="${padding.left + (i / 6) * chartWidth}" y="${height - 8}" text-anchor="middle">${label}</text>`
+            ).join('');
+
+            const gridLines = [0, 0.25, 0.5, 0.75, 1].map(p =>
+                `<line class="axis-line" x1="${padding.left}" y1="${padding.top + chartHeight * (1-p)}" x2="${width - padding.right}" y2="${padding.top + chartHeight * (1-p)}"/>`
+            ).join('');
+
+            container.innerHTML = `
+                <svg width="${width}" height="${height}" style="overflow: visible;">
+                    ${gridLines}
+                    ${bars}
+                    ${yAxisLabels}
+                    ${xAxisLabels}
+                </svg>
+            `;
+        }
+
+        // 生成多线图
+        function createMultiLineChart(containerId, datasets) {
+            const container = document.getElementById(containerId);
+            const width = container.offsetWidth;
+            const height = container.offsetHeight;
+            const padding = { top: 20, right: 20, bottom: 30, left: 50 };
+
+            const allValues = datasets.flatMap(d => d.data);
+            const maxValue = Math.max(...allValues) * 1.1;
+            const minValue = 0;
+            const chartWidth = width - padding.left - padding.right;
+            const chartHeight = height - padding.top - padding.bottom;
+
+            let lines = '';
+            let dots = '';
+
+            datasets.forEach(dataset => {
+                const points = dataset.data.map((value, index) => {
+                    const x = padding.left + (index / (dataset.data.length - 1)) * chartWidth;
+                    const y = padding.top + chartHeight - ((value - minValue) / (maxValue - minValue)) * chartHeight;
+                    return `${x},${y}`;
+                }).join(' ');
+
+                // 添加区域填充
+                lines += `<polygon fill="${dataset.color}" opacity="0.05"
+                    points="${padding.left},${padding.top + chartHeight} ${points} ${padding.left + chartWidth},${padding.top + chartHeight}"/>`;
+
+                lines += `<polyline class="trend-line" stroke="${dataset.color}" points="${points}" fill="none"/>`;
+
+                dataset.data.forEach((value, index) => {
+                    const x = padding.left + (index / (dataset.data.length - 1)) * chartWidth;
+                    const y = padding.top + chartHeight - ((value - minValue) / (maxValue - minValue)) * chartHeight;
+                    dots += `<circle class="trend-dot" stroke="${dataset.color}" cx="${x}" cy="${y}" fill="white"/>`;
+                });
+            });
+
+            // Y轴标签
+            const ySteps = 5;
+            let yAxisLabels = '';
+            for (let i = 0; i < ySteps; i++) {
+                const value = Math.round((maxValue / (ySteps - 1)) * (ySteps - 1 - i));
+                const y = padding.top + (chartHeight / (ySteps - 1)) * i + 4;
+                yAxisLabels += `<text class="axis-text" x="${padding.left - 8}" y="${y}" text-anchor="end">${value}</text>`;
+            }
+
+            const xAxisLabels = ['04-04', '04-05', '04-06', '04-07', '04-08', '04-09', '04-10'].map((label, i) =>
+                `<text class="axis-text" x="${padding.left + (i / 6) * chartWidth}" y="${height - 8}" text-anchor="middle">${label}</text>`
+            ).join('');
+
+            const gridLines = [0, 0.25, 0.5, 0.75, 1].map(p =>
+                `<line class="axis-line" x1="${padding.left}" y1="${padding.top + chartHeight * (1-p)}" x2="${width - padding.right}" y2="${padding.top + chartHeight * (1-p)}"/>`
+            ).join('');
+
+            container.innerHTML = `
+                <svg width="${width}" height="${height}" style="overflow: visible;">
+                    ${gridLines}
+                    ${lines}
+                    ${dots}
+                    ${yAxisLabels}
+                    ${xAxisLabels}
+                </svg>
+            `;
+        }
+
+        // 初始化图表
+        window.addEventListener('load', () => {
+            // 知识采集趋势 - 柱状图
+            createBarChart('chart1', [
+                { data: [0, 0, 0, 0, 0, 4, 0], color: '#1890ff' },
+                { data: [0, 0, 0, 0, 0, 0, 0], color: '#36cfc9' },
+                { data: [0, 0, 0, 0, 0, 0, 0], color: '#52c41a' },
+                { data: [0, 0, 0, 0, 0, 0, 0], color: '#faad14' }
+            ]);
+
+            // 知识调用趋势
+            createLineChart('chart2', [0, 0, 0, 0, 2, 3, 0], '#722ed1', true);
+
+            // 智能体对话趋势
+            createLineChart('chart3', [0, 0, 0, 0, 0.3, 1, 0], '#1890ff', true);
+
+            // 安全防护趋势 - 多线图
+            createMultiLineChart('chart4', [
+                { data: [567, 944, 378, 944, 189, 378, 189], color: '#52c41a' },
+                { data: [0, 0, 0, 0, 0, 0, 0], color: '#1890ff' },
+                { data: [0, 0, 0, 0, 0, 0, 0], color: '#faad14' },
+                { data: [0, 0, 0, 0, 0, 0, 0], color: '#ff4d4f' }
+            ]);
+        });
+
+        // 窗口大小改变时重绘图表
+        let resizeTimer;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                createBarChart('chart1', [
+                    { data: [0, 0, 0, 0, 0, 4, 0], color: '#1890ff' },
+                    { data: [0, 0, 0, 0, 0, 0, 0], color: '#36cfc9' },
+                    { data: [0, 0, 0, 0, 0, 0, 0], color: '#52c41a' },
+                    { data: [0, 0, 0, 0, 0, 0, 0], color: '#faad14' }
+                ]);
+                createLineChart('chart2', [0, 0, 0, 0, 2, 3, 0], '#722ed1', true);
+                createLineChart('chart3', [0, 0, 0, 0, 0.3, 1, 0], '#1890ff', true);
+                createMultiLineChart('chart4', [
+                    { data: [567, 944, 378, 944, 189, 378, 189], color: '#52c41a' },
+                    { data: [0, 0, 0, 0, 0, 0, 0], color: '#1890ff' },
+                    { data: [0, 0, 0, 0, 0, 0, 0], color: '#faad14' },
+                    { data: [0, 0, 0, 0, 0, 0, 0], color: '#ff4d4f' }
+                ]);
+            }, 200);
+        });
+    </script>
+</body>
+</html>
