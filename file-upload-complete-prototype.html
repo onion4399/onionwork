@@ -1,0 +1,1521 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文件上传冲突处理 - 完整交互原型</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f8f9fa;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* 顶部导航栏 */
+        .top-nav {
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+        }
+
+        .search-bar {
+            flex: 1;
+            max-width: 500px;
+            margin: 0 32px;
+            position: relative;
+        }
+
+        .search-bar input {
+            width: 100%;
+            padding: 10px 16px 10px 40px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .search-bar input:focus {
+            border-color: #3b82f6;
+        }
+
+        .search-bar i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #6b7280;
+            font-size: 14px;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .nav-item:hover {
+            background: #f3f4f6;
+            color: #1f2937;
+        }
+
+        /* 主布局 */
+        .main-container {
+            display: flex;
+            height: calc(100vh - 60px);
+        }
+
+        /* 左侧边栏 */
+        .sidebar {
+            width: 240px;
+            background: white;
+            border-right: 1px solid #e5e7eb;
+            padding: 24px 16px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-section {
+            margin-bottom: 32px;
+        }
+
+        .sidebar-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #9ca3af;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+            padding: 0 12px;
+        }
+
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 8px;
+            color: #4b5563;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 4px;
+        }
+
+        .sidebar-item:hover {
+            background: #f3f4f6;
+        }
+
+        .sidebar-item.active {
+            background: #eff6ff;
+            color: #3b82f6;
+        }
+
+        .sidebar-item i {
+            width: 20px;
+            text-align: center;
+            font-size: 16px;
+        }
+
+        .storage-info {
+            margin-top: auto;
+            padding: 16px;
+            background: #f9fafb;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .storage-bar {
+            height: 4px;
+            background: #e5e7eb;
+            border-radius: 2px;
+            margin: 8px 0;
+            overflow: hidden;
+        }
+
+        .storage-used {
+            height: 100%;
+            background: #3b82f6;
+            border-radius: 2px;
+            width: 35%;
+        }
+
+        .storage-text {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        /* 主内容区域 */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #f8f9fa;
+        }
+
+        /* 内容头部 */
+        .content-header {
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 20px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .breadcrumb-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .breadcrumb-item.active {
+            color: #1f2937;
+            font-weight: 500;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-secondary {
+            background: white;
+            border: 1px solid #e5e7eb;
+            color: #4b5563;
+        }
+
+        .btn-secondary:hover {
+            background: #f9fafb;
+            border-color: #d1d5db;
+        }
+
+        /* 文件列表 */
+        .file-list-container {
+            flex: 1;
+            padding: 32px;
+            overflow-y: auto;
+        }
+
+        .file-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 24px;
+        }
+
+        .file-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .file-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            border-color: #d1d5db;
+        }
+
+        .file-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 12px;
+        }
+
+        .file-icon.word {
+            background: #dbeafe;
+            color: #3b82f6;
+        }
+
+        .file-icon.excel {
+            background: #d1fae5;
+            color: #10b981;
+        }
+
+        .file-icon.pdf {
+            background: #fee2e2;
+            color: #ef4444;
+        }
+
+        .file-icon.folder {
+            background: #fef3c7;
+            color: #f59e0b;
+        }
+
+        .file-name {
+            font-size: 14px;
+            font-weight: 500;
+            color: #1f2937;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .file-meta {
+            font-size: 12px;
+            color: #9ca3af;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* 上传区域 */
+        .upload-zone {
+            border: 2px dashed #e5e7eb;
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            background: white;
+            transition: all 0.2s;
+            cursor: pointer;
+            margin-bottom: 24px;
+        }
+
+        .upload-zone:hover {
+            border-color: #3b82f6;
+            background: #f8fafc;
+        }
+
+        .upload-zone.drag-over {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+
+        .upload-icon {
+            width: 64px;
+            height: 64px;
+            background: #eff6ff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+            color: #3b82f6;
+            font-size: 24px;
+        }
+
+        .upload-text {
+            font-size: 16px;
+            font-weight: 500;
+            color: #1f2937;
+            margin-bottom: 8px;
+        }
+
+        .upload-hint {
+            font-size: 14px;
+            color: #9ca3af;
+        }
+
+        /* 弹窗样式 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            width: 90%;
+            max-width: 680px;
+            max-height: 90vh;
+            overflow: hidden;
+            animation: modalSlideIn 0.3s ease-out;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9) translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #fff7ed 0%, #fef3c7 100%);
+            padding: 24px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .icon-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #fed7aa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-title-group h3 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0;
+        }
+
+        .modal-title-group p {
+            font-size: 14px;
+            color: #6b7280;
+            margin: 4px 0 0 0;
+        }
+
+        .close-button {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #9ca3af;
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        .modal-body {
+            padding: 24px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .conflict-item {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .conflict-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .conflict-filename {
+            font-weight: 600;
+            color: #1f2937;
+            font-size: 15px;
+        }
+
+        .file-comparison {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .file-card-modal {
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .file-card-modal.new {
+            background: #eff6ff;
+            border: 1px solid #dbeafe;
+        }
+
+        .file-card-modal.old {
+            background: #f3f4f6;
+            border: 1px solid #e5e7eb;
+        }
+
+        .badge {
+            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+
+        .badge.new {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .badge.old {
+            background: #6b7280;
+            color: white;
+        }
+
+        .arrow-indicator {
+            text-align: center;
+            font-size: 20px;
+            color: #9ca3af;
+            animation: arrowBounce 1s infinite;
+        }
+
+        @keyframes arrowBounce {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(4px); }
+        }
+
+        .modal-footer {
+            background: #f9fafb;
+            padding: 24px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .option-card {
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .option-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .option-card.selected {
+            border-color: #3b82f6;
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+        }
+
+        .option-card.recommended {
+            border-color: #3b82f6;
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+        }
+
+        .option-icon {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #d1d5db;
+            border-radius: 50%;
+            margin: 0 auto 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .option-icon.checked {
+            border-color: #3b82f6;
+        }
+
+        .option-icon.checked::after {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: #3b82f6;
+            border-radius: 50%;
+        }
+
+        .option-title {
+            font-weight: 600;
+            color: #1f2937;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .option-desc {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .recommend-badge {
+            background: #3b82f6;
+            color: white;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 8px;
+            margin-left: 4px;
+        }
+
+        /* 上传进度样式 */
+        .upload-progress-container {
+            display: none;
+        }
+
+        .upload-progress-container.active {
+            display: block;
+        }
+
+        .upload-item {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+
+        .upload-item-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .upload-item-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .upload-item-status {
+            font-size: 12px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+
+        .upload-item-status.uploading {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        .upload-item-status.success {
+            background: #d1fae5;
+            color: #047857;
+        }
+
+        .progress-bar-container {
+            background: #e5e7eb;
+            height: 6px;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%);
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.3s ease;
+            position: relative;
+        }
+
+        .progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .progress-text {
+            font-size: 11px;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+
+        /* 上传结果页面 */
+        .upload-result-container {
+            display: none;
+            text-align: center;
+            padding: 32px 24px;
+        }
+
+        .upload-result-container.active {
+            display: block;
+        }
+
+        .result-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 16px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+        }
+
+        .result-icon.success {
+            background: #d1fae5;
+            color: #047857;
+        }
+
+        .result-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 8px;
+        }
+
+        .result-description {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+
+        .result-details {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 24px;
+            text-align: left;
+        }
+
+        .result-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .result-item:last-child {
+            border-bottom: none;
+        }
+
+        .result-item-name {
+            font-size: 14px;
+            color: #1f2937;
+            font-weight: 500;
+        }
+
+        .result-item-status {
+            font-size: 12px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+
+        .result-item-status.replaced {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        .result-item-status.kept {
+            background: #d1fae5;
+            color: #047857;
+        }
+
+        /* Toast 通知 */
+        .toast {
+            position: fixed;
+            top: 80px;
+            right: 24px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            padding: 16px 20px;
+            display: none;
+            align-items: center;
+            gap: 12px;
+            z-index: 10000;
+            animation: slideInRight 0.3s ease-out;
+        }
+
+        .toast.active {
+            display: flex;
+        }
+
+        .toast.success {
+            border-left: 4px solid #10b981;
+        }
+
+        .toast-icon {
+            font-size: 20px;
+        }
+
+        .toast.success .toast-icon {
+            color: #10b981;
+        }
+
+        .toast-content {
+            flex: 1;
+        }
+
+        .toast-title {
+            font-size: 14px;
+            font-weight: 500;
+            color: #1f2937;
+            margin-bottom: 2px;
+        }
+
+        .toast-message {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .batch-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .batch-option input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .spin {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <div class="top-nav">
+        <div class="logo">
+            <div class="logo-icon">
+                <i class="fa fa-cloud"></i>
+            </div>
+            <span>亿方云</span>
+        </div>
+        <div class="search-bar">
+            <i class="fa fa-search"></i>
+            <input type="text" placeholder="搜索文件、文件夹、团队成员...">
+        </div>
+        <div class="nav-actions">
+            <div class="nav-item">
+                <i class="fa fa-bell"></i>
+            </div>
+            <div class="nav-item">
+                <i class="fa fa-question-circle"></i>
+            </div>
+            <div class="nav-item">
+                <i class="fa fa-user-circle"></i>
+                <span>我的账户</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主容器 -->
+    <div class="main-container">
+        <!-- 左侧边栏 -->
+        <div class="sidebar">
+            <div class="sidebar-section">
+                <div class="sidebar-title">快速访问</div>
+                <div class="sidebar-item active">
+                    <i class="fa fa-folder"></i>
+                    <span>我的文件</span>
+                </div>
+                <div class="sidebar-item">
+                    <i class="fa fa-users"></i>
+                    <span>团队文件</span>
+                </div>
+                <div class="sidebar-item">
+                    <i class="fa fa-share-alt"></i>
+                    <span>共享给我</span>
+                </div>
+                <div class="sidebar-item">
+                    <i class="fa fa-star"></i>
+                    <span>收藏夹</span>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-title">企业空间</div>
+                <div class="sidebar-item">
+                    <i class="fa fa-building"></i>
+                    <span>产品研发部</span>
+                </div>
+                <div class="sidebar-item">
+                    <i class="fa fa-building"></i>
+                    <span>市场营销部</span>
+                </div>
+                <div class="sidebar-item">
+                    <i class="fa fa-building"></i>
+                    <span>人力资源部</span>
+                </div>
+            </div>
+
+            <div class="storage-info">
+                <div class="storage-text">存储空间</div>
+                <div class="storage-bar">
+                    <div class="storage-used"></div>
+                </div>
+                <div class="storage-text">35.2 GB / 100 GB</div>
+            </div>
+        </div>
+
+        <!-- 主内容区域 -->
+        <div class="main-content">
+            <!-- 内容头部 -->
+            <div class="content-header">
+                <div class="breadcrumb">
+                    <div class="breadcrumb-item">
+                        <i class="fa fa-home"></i>
+                    </div>
+                    <i class="fa fa-chevron-right" style="font-size: 12px;"></i>
+                    <div class="breadcrumb-item active">我的文件</div>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-secondary" onclick="showDemoHint()">
+                        <i class="fa fa-info-circle"></i>
+                        演示提示
+                    </button>
+                    <button class="btn btn-primary" onclick="triggerUpload()">
+                        <i class="fa fa-upload"></i>
+                        上传文件
+                    </button>
+                </div>
+            </div>
+
+            <!-- 文件列表 -->
+            <div class="file-list-container">
+                <!-- 上传区域 -->
+                <div class="upload-zone" id="uploadZone" onclick="triggerUpload()">
+                    <div class="upload-icon">
+                        <i class="fa fa-cloud-upload"></i>
+                    </div>
+                    <div class="upload-text">拖拽文件到此处，或点击选择文件</div>
+                    <div class="upload-hint">支持单个文件或批量��传，最大支持 10GB</div>
+                </div>
+
+                <!-- 文件网格 -->
+                <div class="file-grid">
+                    <div class="file-card">
+                        <div class="file-icon word">
+                            <i class="fa fa-file-word"></i>
+                        </div>
+                        <div class="file-name">产品需求文档.docx</div>
+                        <div class="file-meta">
+                            <span>2.4 MB</span>
+                            <span>•</span>
+                            <span>2024-03-15</span>
+                        </div>
+                    </div>
+
+                    <div class="file-card">
+                        <div class="file-icon excel">
+                            <i class="fa fa-file-excel"></i>
+                        </div>
+                        <div class="file-name">销售数据.xlsx</div>
+                        <div class="file-meta">
+                            <span>1.8 MB</span>
+                            <span>•</span>
+                            <span>2024-03-14</span>
+                        </div>
+                    </div>
+
+                    <div class="file-card">
+                        <div class="file-icon pdf">
+                            <i class="fa fa-file-pdf"></i>
+                        </div>
+                        <div class="file-name">技术规范.pdf</div>
+                        <div class="file-meta">
+                            <span>3.6 MB</span>
+                            <span>•</span>
+                            <span>2024-03-10</span>
+                        </div>
+                    </div>
+
+                    <div class="file-card">
+                        <div class="file-icon folder">
+                            <i class="fa fa-folder"></i>
+                        </div>
+                        <div class="file-name">项目文档</div>
+                        <div class="file-meta">
+                            <span>8 个文件</span>
+                            <span>•</span>
+                            <span>2024-03-08</span>
+                        </div>
+                    </div>
+
+                    <div class="file-card">
+                        <div class="file-icon word">
+                            <i class="fa fa-file-word"></i>
+                        </div>
+                        <div class="file-name">会议纪要.docx</div>
+                        <div class="file-meta">
+                            <span>856 KB</span>
+                            <span>•</span>
+                            <span>2024-03-05</span>
+                        </div>
+                    </div>
+
+                    <div class="file-card">
+                        <div class="file-icon excel">
+                            <i class="fa fa-file-excel"></i>
+                        </div>
+                        <div class="file-name">财务报表.xlsx</div>
+                        <div class="file-meta">
+                            <span>2.1 MB</span>
+                            <span>•</span>
+                            <span>2024-03-01</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 冲突处理弹窗 -->
+    <div class="modal-overlay" id="conflictModal">
+        <div class="modal-container">
+            <!-- 冲突处理页面 -->
+            <div id="conflictPage">
+                <div class="modal-header">
+                    <div class="modal-header-left">
+                        <div class="icon-circle">
+                            <i class="fa fa-exclamation-triangle" style="color: #f97316; font-size: 20px;"></i>
+                        </div>
+                        <div class="modal-title-group">
+                            <h3>文件冲突</h3>
+                            <p>发现 1 个文件与已有文件重名</p>
+                        </div>
+                    </div>
+                    <button class="close-button" onclick="closeModal()">
+                        <i class="fa fa-times"></i>
+                    </button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="conflict-item">
+                        <div class="conflict-header">
+                            <i class="fa fa-exclamation-circle" style="color: #f97316;"></i>
+                            <span class="conflict-filename">产品需求文档.docx</span>
+                        </div>
+
+                        <div class="file-comparison">
+                            <div class="file-card-modal new">
+                                <div class="file-card-modal-header">
+                                    <span class="badge new">新文件</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <i class="fa fa-file-word" style="color: #3b82f6; font-size: 24px;"></i>
+                                    <div>
+                                        <h4 style="font-size: 14px; font-weight: 500; color: #1f2937; margin: 0 0 4px 0;">产品需求文档.docx</h4>
+                                        <div style="font-size: 12px; color: #6b7280;">
+                                            <span><i class="fa fa-database"></i> 3.1 MB</span>
+                                            <span style="margin: 0 8px;">|</span>
+                                            <span><i class="fa fa-clock-o"></i> 2024-04-09</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="arrow-indicator">
+                                <i class="fa fa-arrow-right"></i>
+                            </div>
+
+                            <div class="file-card-modal old">
+                                <div class="file-card-modal-header">
+                                    <span class="badge old">已有文件</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <i class="fa fa-file-word" style="color: #3b82f6; font-size: 24px;"></i>
+                                    <div>
+                                        <h4 style="font-size: 14px; font-weight: 500; color: #1f2937; margin: 0 0 4px 0;">产品需求文档.docx</h4>
+                                        <div style="font-size: 12px; color: #6b7280;">
+                                            <span><i class="fa fa-database"></i> 2.4 MB</span>
+                                            <span style="margin: 0 8px;">|</span>
+                                            <span><i class="fa fa-clock-o"></i> 2024-03-15</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 12px; margin-top: 12px; display: flex; align-items: center; gap: 8px; font-size: 13px; color: #9a3412;">
+                            <i class="fa fa-info-circle"></i>
+                            <span>新文件比旧文件大 +0.7 MB</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <div style="margin-bottom: 16px;">
+                        <p style="font-weight: 500; color: #374151; margin-bottom: 12px; font-size: 14px;">选择处理方式：</p>
+                        <div class="options-grid">
+                            <div class="option-card recommended" onclick="selectOption(this, 'replace')">
+                                <div class="option-icon checked"></div>
+                                <div class="option-title">
+                                    替换
+                                    <span class="recommend-badge">推荐</span>
+                                </div>
+                                <div class="option-desc">用新文件覆盖旧文件</div>
+                            </div>
+
+                            <div class="option-card" onclick="selectOption(this, 'keepBoth')">
+                                <div class="option-icon"></div>
+                                <div class="option-title">保留两者</div>
+                                <div class="option-desc">自动重命名新文件</div>
+                            </div>
+
+                            <div class="option-card" onclick="selectOption(this, 'cancel')">
+                                <div class="option-icon"></div>
+                                <div class="option-title">取消上传</div>
+                                <div class="option-desc">跳过该文件</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="batch-option">
+                        <input type="checkbox" id="applyToAll">
+                        <label for="applyToAll">对所有冲突文件应用相同操作</label>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button class="btn btn-secondary" onclick="closeModal()" style="flex: 1;">取消</button>
+                        <button class="btn btn-primary" onclick="startUpload()" style="flex: 1;">
+                            <i class="fa fa-check" style="margin-right: 6px;"></i>确认替换
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 上传进度页面 -->
+            <div id="uploadProgressPage" class="upload-progress-container">
+                <div class="modal-header">
+                    <div class="modal-header-left">
+                        <div class="icon-circle" style="background: #dbeafe;">
+                            <i class="fa fa-cloud-upload" style="color: #3b82f6; font-size: 20px;"></i>
+                        </div>
+                        <div class="modal-title-group">
+                            <h3>上传中</h3>
+                            <p>正在处理文件...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-body">
+                    <div id="uploadItems"></div>
+                </div>
+
+                <div class="modal-footer">
+                    <p style="text-align: center; color: #6b7280; font-size: 13px;">
+                        <i class="fa fa-info-circle"></i> 上传过程中请不要关闭浏览器
+                    </p>
+                </div>
+            </div>
+
+            <!-- 上传结果页面 -->
+            <div id="uploadResultPage" class="upload-result-container">
+                <div id="resultContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast 通知 -->
+    <div class="toast" id="toast">
+        <div class="toast-icon">
+            <i class="fa fa-check-circle"></i>
+        </div>
+        <div class="toast-content">
+            <div class="toast-title">上传成功</div>
+            <div class="toast-message">文件已成功上传到我的文件</div>
+        </div>
+    </div>
+
+    <script>
+        let currentOption = 'replace';
+        let currentProgress = 0;
+
+        // 触发上传
+        function triggerUpload() {
+            document.getElementById('conflictModal').classList.add('active');
+            resetModal();
+        }
+
+        // 重置弹窗状态
+        function resetModal() {
+            document.getElementById('conflictPage').classList.remove('hidden');
+            document.getElementById('uploadProgressPage').classList.remove('active');
+            document.getElementById('uploadResultPage').classList.remove('active');
+
+            // 重置选项选择
+            document.querySelectorAll('.option-card').forEach(card => {
+                card.classList.remove('selected', 'recommended');
+                card.querySelector('.option-icon').classList.remove('checked');
+            });
+            document.querySelector('.option-card.recommended').classList.add('recommended');
+            document.querySelector('.option-card.recommended .option-icon').classList.add('checked');
+
+            // 重置按钮文本
+            const confirmBtn = document.querySelector('#conflictPage .btn-primary');
+            confirmBtn.innerHTML = '<i class="fa fa-check" style="margin-right: 6px;"></i>确认替换';
+            currentOption = 'replace';
+        }
+
+        // 选择操作选项
+        function selectOption(element, option) {
+            currentOption = option;
+
+            document.querySelectorAll('.option-card').forEach(card => {
+                card.classList.remove('selected', 'recommended');
+                card.querySelector('.option-icon').classList.remove('checked');
+            });
+
+            element.classList.add('selected');
+            element.querySelector('.option-icon').classList.add('checked');
+
+            const confirmBtn = document.querySelector('#conflictPage .btn-primary');
+            const buttonTexts = {
+                'replace': '<i class="fa fa-check" style="margin-right: 6px;"></i>确认替换',
+                'keepBoth': '<i class="fa fa-copy" style="margin-right: 6px;"></i>确认保留',
+                'cancel': '<i class="fa fa-times" style="margin-right: 6px;"></i>确认取消'
+            };
+            confirmBtn.innerHTML = buttonTexts[option];
+        }
+
+        // 开始上传
+        function startUpload() {
+            if (currentOption === 'cancel') {
+                closeModal();
+                return;
+            }
+
+            document.getElementById('conflictPage').classList.add('hidden');
+            document.getElementById('uploadProgressPage').classList.add('active');
+
+            createUploadItems();
+            simulateUpload();
+        }
+
+        // 创建上传项目
+        function createUploadItems() {
+            const uploadItems = document.getElementById('uploadItems');
+            const fileName = '产品需求文档.docx';
+
+            let actionText = '';
+            if (currentOption === 'replace') {
+                actionText = '替换已有文件';
+            } else if (currentOption === 'keepBoth') {
+                actionText = '重命名为 "产品需求文档 (1).docx"';
+            }
+
+            uploadItems.innerHTML = `
+                <div class="upload-item" id="uploadItem">
+                    <div class="upload-item-header">
+                        <div class="upload-item-info">
+                            <i class="fa fa-file-word" style="color: #3b82f6; font-size: 20px;"></i>
+                            <div>
+                                <div style="font-weight: 500; color: #1f2937; font-size: 14px;">${fileName}</div>
+                                <div style="font-size: 12px; color: #6b7280;">${actionText}</div>
+                            </div>
+                        </div>
+                        <div class="upload-item-status uploading">
+                            <i class="fa fa-spinner spin"></i> 上传中
+                        </div>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+                    </div>
+                    <div class="progress-text" id="progressText">0%</div>
+                </div>
+            `;
+        }
+
+        // 模拟上传进度
+        function simulateUpload() {
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            const statusElement = document.querySelector('.upload-item-status');
+            currentProgress = 0;
+
+            const interval = setInterval(() => {
+                const increment = Math.random() * 15 + 5;
+                currentProgress = Math.min(currentProgress + increment, 100);
+
+                progressBar.style.width = currentProgress + '%';
+                progressText.textContent = Math.round(currentProgress) + '%';
+
+                if (currentProgress >= 100) {
+                    clearInterval(interval);
+
+                    setTimeout(() => {
+                        statusElement.className = 'upload-item-status success';
+                        statusElement.innerHTML = '<i class="fa fa-check"></i> 上传成功';
+                        progressText.textContent = '上传完成';
+
+                        setTimeout(() => {
+                            showResultPage();
+                        }, 1500);
+                    }, 500);
+                }
+            }, 200);
+        }
+
+        // 显示结果页面
+        function showResultPage() {
+            document.getElementById('uploadProgressPage').classList.remove('active');
+            document.getElementById('uploadResultPage').classList.add('active');
+
+            const resultContent = document.getElementById('resultContent');
+            const fileName = '产品需求文档.docx';
+
+            let resultHTML = '';
+
+            if (currentOption === 'replace') {
+                resultHTML = `
+                    <div class="result-icon success">
+                        <i class="fa fa-check"></i>
+                    </div>
+                    <h2 class="result-title">文件替换成功</h2>
+                    <p class="result-description">
+                        已成功用新文件替换旧文件，旧文件已被覆盖。<br>
+                        您可以在文件列表中查看最新的文件版本。
+                    </p>
+
+                    <div class="result-details">
+                        <div class="result-item">
+                            <span class="result-item-name">
+                                <i class="fa fa-file-word" style="color: #3b82f6; margin-right: 8px;"></i>
+                                ${fileName}
+                            </span>
+                            <span class="result-item-status replaced">已替换</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-item-name" style="font-size: 12px; color: #6b7280;">
+                                文件大小: 3.1 MB
+                            </span>
+                            <span class="result-item-status" style="background: #f3f4f6; color: #6b7280;">新版本</span>
+                        </div>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button class="btn btn-secondary" onclick="closeModal()">关闭</button>
+                        <button class="btn btn-primary" onclick="viewFile()">
+                            <i class="fa fa-eye" style="margin-right: 6px;"></i>查看文件
+                        </button>
+                    </div>
+                `;
+            } else if (currentOption === 'keepBoth') {
+                resultHTML = `
+                    <div class="result-icon success">
+                        <i class="fa fa-check"></i>
+                    </div>
+                    <h2 class="result-title">文件保留成功</h2>
+                    <p class="result-description">
+                        已自动重命名新文件，两个文件都已保存。<br>
+                        您可以在文件列表中查看这两个文件。
+                    </p>
+
+                    <div class="result-details">
+                        <div class="result-item">
+                            <span class="result-item-name">
+                                <i class="fa fa-file-word" style="color: #3b82f6; margin-right: 8px;"></i>
+                                ${fileName}
+                            </span>
+                            <span class="result-item-status kept">保留原文件</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-item-name">
+                                <i class="fa fa-file-word" style="color: #3b82f6; margin-right: 8px;"></i>
+                                产品需求文档 (1).docx
+                            </span>
+                            <span class="result-item-status kept">新文件</span>
+                        </div>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button class="btn btn-secondary" onclick="closeModal()">关闭</button>
+                        <button class="btn btn-primary" onclick="viewFile()">
+                            <i class="fa fa-folder-open" style="margin-right: 6px;"></i>查看文件夹
+                        </button>
+                    </div>
+                `;
+            }
+
+            resultContent.innerHTML = resultHTML;
+        }
+
+        // 关闭弹窗
+        function closeModal() {
+            document.getElementById('conflictModal').classList.remove('active');
+
+            // 如果是成功上传，显示Toast通知
+            if (currentOption !== 'cancel') {
+                showToast();
+            }
+        }
+
+        // 显示Toast通知
+        function showToast() {
+            const toast = document.getElementById('toast');
+            toast.classList.add('active');
+
+            setTimeout(() => {
+                toast.classList.remove('active');
+            }, 3000);
+        }
+
+        // 查看文件
+        function viewFile() {
+            alert('正在打开文件列表...');
+            closeModal();
+        }
+
+        // 演示提示
+        function showDemoHint() {
+            alert('演示提示：\n\n1. 点击"上传文件"按钮或拖拽文件到上传区域\n2. 系统会检测到同名文件冲突\n3. 在弹窗中选择处理方式（替换/保留两者/取消）\n4. 查看上传进度和最终结果\n5. 不同选项会显示不同的处理结果');
+        }
+
+        // 拖拽上传
+        const uploadZone = document.getElementById('uploadZone');
+
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('drag-over');
+        });
+
+        uploadZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('drag-over');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('drag-over');
+            triggerUpload();
+        });
+
+        // 点击遮罩关闭弹窗
+        document.getElementById('conflictModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>
